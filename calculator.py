@@ -40,19 +40,84 @@ To submit your homework:
 
 
 """
-
+# import pysnooper
 
 def add(*args):
     """ Returns a STRING with the sum of the arguments """
 
     # TODO: Fill sum with the correct value, based on the
     # args provided.
-    sum = "0"
+    try:
+        result = int(args[0])
+        for i in range(1, len(args)):
+            result = result + int(args[i])
+    except (ValueError, TypeError):
+        raise TypeError
 
-    return sum
+    return str(result)
 
 # TODO: Add functions for handling more arithmetic operations.
 
+def subtract(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    try:
+        result = int(args[0])
+        for i in range(1, len(args)):
+            result = result - int(args[i])
+    except (ValueError, TypeError):
+        raise TypeError
+
+    return str(result)
+
+
+def multiply(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    try:
+        result = int(args[0])
+        for i in range(1, len(args)):
+            result = result * int(args[i])
+    except (ValueError, TypeError):
+        raise TypeError
+
+    return str(result)
+
+
+def divide(*args):
+    """ Returns a STRING with the sum of the arguments """
+
+    # TODO: Fill sum with the correct value, based on the
+    # args provided.
+    try:
+        result = int(args[0])
+        for i in range(1, len(args)):
+            result = result / int(args[i])
+    except (ValueError, TypeError):
+        raise TypeError
+    except ZeroDivisionError:
+        raise ZeroDivisionError
+
+    return str(result)
+
+
+def info_page():
+    """ Returns a STRING with instructions on how to use the calculator """
+    instructions = ['This site is a calculator!</br>',
+                    'Usage:</br>',
+                    'Input a path with the desired operator followed by the desired operands.</br>',
+                    'Examples:</br>',
+                    'add/4/5 will return a page showing 9</br>',
+                    'multiply/2/3 will return a page showing 6</br>',
+                    'Possible operators are: add, subtract, multiply, and divide.']
+
+    return '\n'.join(instructions)
+
+# @pysnooper.snoop()
 def resolve_path(path):
     """
     Should return two values: a callable and an iterable of
@@ -63,22 +128,67 @@ def resolve_path(path):
     # examples provide the correct *syntax*, but you should
     # determine the actual values of func and args using the
     # path.
-    func = add
-    args = ['25', '32']
+    funcs = {
+            '': info_page,
+            'add': add,
+            'subtract': subtract,
+            'multiply': multiply,
+            'divide': divide
+            }
 
+    path = path.strip('/').split('/')
+
+    func_name = path[0]
+    args = path[1:]
+
+    try:
+        func = funcs[func_name]
+    except KeyError:
+        raise NameError
+
+    # func = add
+    # args = ['25', '32']
     return func, args
+
 
 def application(environ, start_response):
     # TODO: Your application code from the book database
     # work here as well! Remember that your application must
     # invoke start_response(status, headers) and also return
     # the body of the response in BYTE encoding.
-    #
+    headers = [('Content-type', 'text/html')]
+    try:
+        path = environ.get('PATH_INFO', None)
+        if path is None:
+            raise NameError
+        func, args = resolve_path(path)
+        body = func(*args)
+        status = "200 OK"
+    except NameError:
+        status = '404 Not Found'
+        body = '<h1> Not Found </h1>'
     # TODO (bonus): Add error handling for a user attempting
     # to divide by zero.
-    pass
+    except TypeError:
+        status = '500 Internal Server Error'
+        body = '<h1>Operands must be integers!</h1>'
+    except ZeroDivisionError:
+        status = '500 Internal Server Error'
+        body = '<h1>Cannot divide by 0!</h1>'
+    except Exception:
+        status = '500 Internal Server Error'
+        body = '<h1>Internal Server Error</h1>'
+        print(traceback.format_exc())
+    finally:
+        headers.append(('Content-length', str(len(body))))
+        start_response(status, headers)
+        return [body.encode('utf8')]
+
+
 
 if __name__ == '__main__':
     # TODO: Insert the same boilerplate wsgiref simple
     # server creation that you used in the book database.
-    pass
+    from wsgiref.simple_server import make_server
+    srv = make_server('localhost', 8080, application)
+    srv.serve_forever()
