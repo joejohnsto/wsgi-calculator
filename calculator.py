@@ -78,10 +78,10 @@ def multiply(*args):
 
     # TODO: Fill sum with the correct value, based on the
     # args provided.
+    result = 1
     try:
-        result = int(args[0])
-        for i in range(1, len(args)):
-            result = result * int(args[i])
+        for num in args:
+            result *= int(num)
     except (ValueError, TypeError):
         raise TypeError
 
